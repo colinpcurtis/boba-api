@@ -1,5 +1,3 @@
-from numpy import ceil
-import pandas as pd
 from flask import Flask
 from flask_cors import CORS, cross_origin
 import json
@@ -18,17 +16,32 @@ CORS(app)
 
 app = Flask(__name__)
 
-@app.route('/boba', methods=['GET'])
+
+def get_users_in_server(collection):
+    users = collection.find({})
+    users_in_server = []
+    for item in users:
+        username = item["user"]
+        users_in_server.append(username)
+    return users_in_server
+
+
+@app.route('/boba/<server>', methods=['GET'])
 @cross_origin()
-def get_boba():
-    cursor = boba_count_db.find({})
-    count = {}
-    for document in cursor:
-        user = document["user"]
-        boba_count = document["boba_count"]
-        count[user] = boba_count
-    count = {k: v for k, v in sorted(count.items(), key=lambda item: item[1], reverse=True)}
-    return  json.dumps(count)
+def get_boba(server: str):
+    collection = db[server]
+    users = get_users_in_server(collection)
+    counts = {}
+    cursor = boba_count_db.find({"user": {"$in": users}})
+    # get the document in the count db 
+    # for all the users in the server
+    for doc in cursor:
+        user = doc["user"]
+        count = doc["boba_count"]
+        counts[user] = count
+    count = {k: v for k, v in sorted(counts.items(), key=lambda item: item[1], reverse=True)}
+    return json.dumps(counts)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
