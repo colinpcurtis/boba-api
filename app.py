@@ -49,8 +49,7 @@ def get_boba(server: str):
         user = doc["user"]
         count = doc["boba_count"]
         counts[user] = count
-    count = {k: v for k, v in sorted(counts.items(), key=lambda item: item[1], reverse=True)}
-    print(count)
+    counts = {k: v for k, v in sorted(counts.items(), key=lambda item: item[1], reverse=True)}
     return json.dumps(counts)
 
 
