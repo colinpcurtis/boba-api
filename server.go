@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"context"
 	"sync"
+	"os"
 	"time"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -16,13 +17,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-
-/* Used to create a singleton object of MongoDB client.
-Initialized and exposed through  GetMongoClient().*/
 var clientInstance *mongo.Client
-//Used during creation of singleton client object in GetMongoClient().
 var clientInstanceError error
-//Used to execute client creation procedure only once.
 var mongoOnce sync.Once
 var ctx = context.TODO()
 
@@ -46,7 +42,7 @@ type Error struct {
 func getClient() (*mongo.Client, error) {
 	mongoOnce.Do(func() {
 		// Set client options
-		clientOptions := options.Client().ApplyURI("mongodb+srv://dbuser:YlxiFoOkwEWnwgYt@cluster0.rhw7i.mongodb.net/")
+		clientOptions := options.Client().ApplyURI(os.Getenv("MONGO_URL"))
 		// Connect to MongoDB
 		client, err := mongo.Connect(context.TODO(), clientOptions)
 		if err != nil {
@@ -74,7 +70,7 @@ func getUsersInServer(server string) []string {
 		return nil
 	}
 
-	cursor, err := client.Database("boba_db").Collection(server).Find(context.Background(), bson.M{})
+	cursor, err := client.Database("boba_db").Collection(server).Find(ctx, bson.M{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -130,7 +126,7 @@ func getBoba(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filter := bson.M{"user": bson.D{primitive.E{Key: "$in", Value: userList}}}
-	cursor, err := client.Database("boba_db").Collection("boba_count").Find(context.Background(), filter)
+	cursor, err := client.Database("boba_db").Collection("boba_count").Find(ctx, filter)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -142,9 +138,6 @@ func getBoba(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(users)
 
-	// fmt.Println(&client)
-	// else return json of users and 
-
 	// w.Header().Set("Content-Type", "application/json")
 	// TODO: return sorted json by values
 }
@@ -155,10 +148,6 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/boba/{server}", getBoba).Methods("GET")
 	router.Use(mux.CORSMethodMiddleware(router))
-
-	// exist := doesServerExist("Rieber Heauxs")
-	// fmt.Println(exist)
-	// fmt.Println("hi")
 
 	srv := &http.Server{
 		Handler: router,
