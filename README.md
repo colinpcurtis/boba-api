@@ -1,21 +1,32 @@
 # Boba API
 
-This is the backend to the [Boba App](https://github.com/colinpcurtis/boba-api).  
+[![GitHub Super-Linter](https://github.com/colinpcurtis/boba-api/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
+
+This is the backend to the [Boba App](https://github.com/colinpcurtis/boba-app).
 
 ## Setup
-Make a `.env` file to hold environment variables required to run the app.
+To initialize a go module, run
+```bash
+go mod init server
 ```
+
+Make a `.env` file to hold environment variables required to run the app.
+```bash
 MONGO_URL=(mongo cluster url)
 ```
 
-Then to install the required dependencies run 
-```
-pip install -r requirements.txt
+Then to install the required dependencies run
+```bash
+go get
 ```
 
 ## Run the Server
-Run 
+Run
+```bash
+go build
 ```
-python app.py
+to compile the code, then
+```bash
+./server
 ```
-The api has been tested to work on python 3.9.
+to run the server
