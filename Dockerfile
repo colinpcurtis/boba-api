@@ -4,4 +4,4 @@ COPY . .
 RUN \
     go get && \
     go build
-CMD ./server
+CMD ["./server"]

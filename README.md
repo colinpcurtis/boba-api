@@ -2,7 +2,7 @@
 
 [![GitHub Super-Linter](https://github.com/colinpcurtis/boba-api/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
 
-This is the backend to the [Boba App](https://github.com/colinpcurtis/boba-app).  
+This is the backend to the [Boba App](https://github.com/colinpcurtis/boba-app).
 
 ## Setup
 To initialize a go module, run
@@ -15,17 +15,17 @@ Make a `.env` file to hold environment variables required to run the app.
 MONGO_URL=(mongo cluster url)
 ```
 
-Then to install the required dependencies run 
+Then to install the required dependencies run
 ```bash
 go get
 ```
 
 ## Run the Server
-Run 
+Run
 ```bash
 go build
 ```
-to compile the code, then 
+to compile the code, then
 ```bash
 ./server
 ```
