@@ -1,5 +1,7 @@
 # Boba API
 
+[![GitHub Super-Linter](https://github.com/colinpcurtis/boba-api/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
+
 This is the backend to the [Boba App](https://github.com/colinpcurtis/boba-api).  
 
 ## Setup

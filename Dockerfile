@@ -1,4 +1,6 @@
-FROM python:3.8
-COPY . . 
-RUN pip install -r requirements.txt
-CMD python app.py
+FROM golang:1.16-alpine
+WORKDIR /app
+COPY . .
+RUN go get
+RUN go build
+CMD ./server

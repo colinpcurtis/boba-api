@@ -1,20 +1,21 @@
 package main
 
 import (
-	// "encoding/json"
+	"os"
 	"log"
 	"fmt"
-	"net/http"
-	"context"
+	"sort"
 	"sync"
-	"os"
 	"time"
+	"context"
+	"net/http"
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive" // for BSON ObjectID
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var clientInstance *mongo.Client
@@ -36,7 +37,12 @@ type UserData struct {
 }
 
 type Error struct {
-	message string
+	Message string
+}
+
+type JsonPayload struct {
+	User string
+	BobaCount int
 }
 
 func getClient() (*mongo.Client, error) {
@@ -44,7 +50,7 @@ func getClient() (*mongo.Client, error) {
 		// Set client options
 		clientOptions := options.Client().ApplyURI(os.Getenv("MONGO_URL"))
 		// Connect to MongoDB
-		client, err := mongo.Connect(context.TODO(), clientOptions)
+		client, err := mongo.Connect(ctx, clientOptions)
 		if err != nil {
 			clientInstanceError = err
 		}
@@ -59,18 +65,17 @@ func getClient() (*mongo.Client, error) {
 	return clientInstance, clientInstanceError
 }
 
-func getBobaCount() (*Username) {
-	user := Username{}
-	return &user
+func prepareJson(users []UserData) ([]JsonPayload) {
+	var json []JsonPayload
+	for _, user := range(users) {
+		data := JsonPayload{user.User, user.BobaCount}
+		json = append(json, data)
+	}
+	return json
 }
 
 func getUsersInServer(server string) []string {
-	client, err := getClient()
-	if err != nil {
-		return nil
-	}
-
-	cursor, err := client.Database("boba_db").Collection(server).Find(ctx, bson.M{})
+	cursor, err := clientInstance.Database("boba_db").Collection(server).Find(ctx, bson.M{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,7 +103,7 @@ func doesServerExist(server string) bool {
 		return false
 	}
 	for _, el := range serverList {
-		if el == server {
+		if el != "boba_count" && el == server {
 			return true
 		}
 	}
@@ -108,25 +113,18 @@ func doesServerExist(server string) bool {
 func getBoba(w http.ResponseWriter, r *http.Request) {
 	server := mux.Vars(r)["server"]
 	log.Printf("GET /boba/%s", server)
-	fmt.Fprint(w, "server")
-	fmt.Println(server)
+	w.Header().Set("Content-Type", "application/json")
 
 	if !doesServerExist(server) {
-		fmt.Println("server doesn't exist error")
-		// return json for server doesn't exist
+		message := "Error: " + server + " does not exist, please try again"
+		error := Error{message}
+		json.NewEncoder(w).Encode(error)
+		return
 	}
-
 	userList := getUsersInServer(server)
-	fmt.Println(userList)
-
-
-	client, err := getClient()
-	if err != nil {
-		// return json connection error
-	}
 
 	filter := bson.M{"user": bson.D{primitive.E{Key: "$in", Value: userList}}}
-	cursor, err := client.Database("boba_db").Collection("boba_count").Find(ctx, filter)
+	cursor, err := clientInstance.Database("boba_db").Collection("boba_count").Find(ctx, filter)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -135,11 +133,13 @@ func getBoba(w http.ResponseWriter, r *http.Request) {
 	if err = cursor.All(context.Background(), &users); err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println(users)
-
-	// w.Header().Set("Content-Type", "application/json")
-	// TODO: return sorted json by values
+	
+	payload := prepareJson(users)
+	sort.Slice(payload, func(i, j int) bool {
+		return payload[i].BobaCount > payload[j].BobaCount
+	})
+	json.NewEncoder(w).Encode(payload)
+	return
 }
 
 func main() {
@@ -151,7 +151,7 @@ func main() {
 
 	srv := &http.Server{
 		Handler: router,
-		Addr:    "127.0.0.1:8000",
+		Addr:    "0.0.0.0:8000",
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
